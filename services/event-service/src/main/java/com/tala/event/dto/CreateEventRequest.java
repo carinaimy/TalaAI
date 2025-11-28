@@ -42,4 +42,10 @@ public class CreateEventRequest {
     
     @Size(max = 50, message = "Source must be less than 50 characters")
     private String source;
+
+    private String priority;
+
+    private Integer urgencyHours;
+
+    private String riskLevel;
 }

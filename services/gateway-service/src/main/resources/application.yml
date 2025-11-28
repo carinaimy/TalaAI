@@ -33,6 +33,48 @@ spring:
             - Path=/api/v1/users/**,/api/v1/profiles/**,/api/v1/auth/**
           filters:
             - StripPrefix=0
+        
+        - id: reminder-service
+          uri: ${REMINDER_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/v1/reminders/**
+          filters:
+            - StripPrefix=0
+        
+        - id: media-service
+          uri: ${MEDIA_SERVICE_URL:http://localhost:8086}
+          predicates:
+            - Path=/api/v1/media/**
+          filters:
+            - StripPrefix=0
+        
+        - id: personalization-service
+          uri: ${PERSONALIZATION_SERVICE_URL:http://localhost:8087}
+          predicates:
+            - Path=/api/v1/personalization/**
+          filters:
+            - StripPrefix=0
+        
+        - id: checkin-service
+          uri: ${CHECKIN_SERVICE_URL:http://localhost:8088}
+          predicates:
+            - Path=/api/v1/checkin/**
+          filters:
+            - StripPrefix=0
+        
+        - id: external-service
+          uri: ${EXTERNAL_SERVICE_URL:http://localhost:8089}
+          predicates:
+            - Path=/api/v1/external/**
+          filters:
+            - StripPrefix=0
+        
+        - id: daycare-service
+          uri: ${DAYCARE_SERVICE_URL:http://localhost:8090}
+          predicates:
+            - Path=/api/v1/daycare/**
+          filters:
+            - StripPrefix=0
       
       default-filters:
         - name: RequestRateLimiter

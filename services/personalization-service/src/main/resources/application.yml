@@ -1,0 +1,94 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: personalization-service
+  
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 2
+        max-wait: -1ms
+
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=5m
+
+# Feign clients configuration
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 10000
+        loggerLevel: basic
+  
+  # Service URLs
+  services:
+    query-service:
+      url: ${QUERY_SERVICE_URL:http://localhost:8082}
+    reminder-service:
+      url: ${REMINDER_SERVICE_URL:http://localhost:8085}
+    media-service:
+      url: ${MEDIA_SERVICE_URL:http://localhost:8086}
+    user-service:
+      url: ${USER_SERVICE_URL:http://localhost:8084}
+    ai-service:
+      url: ${AI_SERVICE_URL:http://localhost:8083}
+    event-service:
+      url: ${EVENT_SERVICE_URL:http://localhost:8081}
+
+# Personalization configuration
+personalization:
+  # Priority calculation weights
+  priority:
+    user-interest-weight: 0.30
+    urgency-weight: 0.25
+    age-relevance-weight: 0.20
+    recency-weight: 0.15
+    trend-weight: 0.10
+  
+  # Today page configuration
+  today:
+    max-pill-topics: 5
+    min-pill-topics: 3
+    cache-ttl-minutes: 5
+  
+  # Insights configuration
+  insights:
+    default-limit: 10
+    min-priority-score: 30
+  
+  # Tala starters configuration
+  tala:
+    max-starters: 8
+    min-priority-score: 40
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.tala.personalization: DEBUG
+    org.springframework.web: INFO
+    feign: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

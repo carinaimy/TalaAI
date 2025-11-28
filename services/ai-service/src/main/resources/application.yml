@@ -29,10 +29,20 @@ management:
       exposure:
         include: health,info,metrics,prometheus
 
-ai:
-  openai:
-    api-key: ${OPENAI_API_KEY:}
-    model: ${OPENAI_MODEL:gpt-4}
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-2.0-flash-exp}
+
+# External services on Mac Mini (192.168.1.112)
+external:
+  mem0:
+    url: ${MEM0_URL:http://192.168.1.112:8000}
+    api-key: ${MEM0_API_KEY:}
+  mlx-audio:
+    url: ${MLX_AUDIO_URL:http://192.168.1.112:5000}
+  mailcow:
+    url: ${MAILCOW_URL:http://192.168.1.112:8080}
+    api-key: ${MAILCOW_API_KEY:}
 
 logging:
   level:

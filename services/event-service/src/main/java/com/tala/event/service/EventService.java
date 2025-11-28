@@ -198,6 +198,131 @@ public class EventService {
     }
     
     /**
+     * Get timeline events grouped by date
+     */
+    @Transactional(readOnly = true)
+    public List<com.tala.event.dto.TimelineEventResponse> getTimelineEvents(
+        Long profileId,
+        Instant startTime,
+        Instant endTime,
+        List<String> eventTypes
+    ) {
+        validateTimeRange(startTime, endTime);
+        
+        List<Event> events;
+        if (eventTypes != null && !eventTypes.isEmpty()) {
+            events = new java.util.ArrayList<>();
+            for (String type : eventTypes) {
+                events.addAll(repository.findByProfileIdAndEventTypeAndTimeRange(
+                    profileId, type, startTime, endTime
+                ));
+            }
+        } else {
+            events = repository.findByProfileIdAndTimeRange(
+                profileId, startTime, endTime
+            );
+        }
+        
+        return events.stream()
+            .map(this::toTimelineResponse)
+            .sorted((a, b) -> b.getEventTime().compareTo(a.getEventTime()))
+            .collect(java.util.stream.Collectors.toList());
+    }
+    
+    /**
+     * Get calendar month summary
+     */
+    @Transactional(readOnly = true)
+    public com.tala.event.dto.CalendarMonthResponse getCalendarMonth(
+        Long profileId,
+        java.time.YearMonth yearMonth
+    ) {
+        java.time.LocalDate startDate = yearMonth.atDay(1);
+        java.time.LocalDate endDate = yearMonth.atEndOfMonth();
+        
+        Instant startTime = startDate.atStartOfDay(java.time.ZoneId.of("UTC")).toInstant();
+        Instant endTime = endDate.plusDays(1).atStartOfDay(java.time.ZoneId.of("UTC")).toInstant();
+        
+        List<Event> events = repository.findByProfileIdAndTimeRange(
+            profileId, startTime, endTime
+        );
+        
+        // Group by date
+        java.util.Map<java.time.LocalDate, List<Event>> eventsByDate = events.stream()
+            .collect(java.util.stream.Collectors.groupingBy(
+                e -> e.getEventTime().atZone(java.time.ZoneId.of("UTC")).toLocalDate()
+            ));
+        
+        List<com.tala.event.dto.CalendarDaySummary> daySummaries = new java.util.ArrayList<>();
+        
+        for (java.time.LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            List<Event> dayEvents = eventsByDate.getOrDefault(date, java.util.Collections.emptyList());
+            daySummaries.add(buildDaySummary(date, dayEvents));
+        }
+        
+        return com.tala.event.dto.CalendarMonthResponse.builder()
+            .yearMonth(yearMonth)
+            .profileId(profileId)
+            .days(daySummaries)
+            .totalEvents((long) events.size())
+            .build();
+    }
+    
+    private com.tala.event.dto.TimelineEventResponse toTimelineResponse(Event event) {
+        return com.tala.event.dto.TimelineEventResponse.builder()
+            .id(event.getId())
+            .profileId(event.getProfileId())
+            .eventType(event.getEventType())
+            .eventTime(event.getEventTime())
+            .eventDate(event.getEventTime().atZone(java.time.ZoneId.of("UTC")).toLocalDate())
+            .aiSummary(event.getAiSummary())
+            .aiTags(event.getAiTags())
+            .priority(event.getPriority())
+            .urgencyHours(event.getUrgencyHours())
+            .riskLevel(event.getRiskLevel())
+            .eventData(event.getEventData())
+            .build();
+    }
+    
+    private com.tala.event.dto.CalendarDaySummary buildDaySummary(
+        java.time.LocalDate date,
+        List<Event> events
+    ) {
+        java.util.Map<String, Long> typeCount = events.stream()
+            .collect(java.util.stream.Collectors.groupingBy(
+                Event::getEventType,
+                java.util.stream.Collectors.counting()
+            ));
+        
+        boolean hasIncident = events.stream().anyMatch(e -> "INCIDENT".equals(e.getEventType()));
+        boolean hasSickness = events.stream().anyMatch(e -> "SICKNESS".equals(e.getEventType()));
+        boolean hasReminder = events.stream().anyMatch(e -> "REMINDER_CREATED".equals(e.getEventType()));
+        boolean hasMedicalVisit = events.stream().anyMatch(e -> "MEDICAL_VISIT".equals(e.getEventType()));
+        
+        boolean hasImportant = hasIncident || hasSickness || hasMedicalVisit ||
+            events.stream().anyMatch(e -> "high".equals(e.getPriority()) || "critical".equals(e.getPriority()));
+        
+        java.util.List<String> highlightTags = events.stream()
+            .filter(e -> e.getAiTags() != null)
+            .flatMap(e -> e.getAiTags().stream())
+            .distinct()
+            .limit(5)
+            .collect(java.util.stream.Collectors.toList());
+        
+        return com.tala.event.dto.CalendarDaySummary.builder()
+            .date(date)
+            .totalEvents((long) events.size())
+            .hasImportantEvent(hasImportant)
+            .hasIncident(hasIncident)
+            .hasSickness(hasSickness)
+            .hasReminder(hasReminder)
+            .hasMedicalVisit(hasMedicalVisit)
+            .eventTypeCount(typeCount)
+            .highlightTags(highlightTags)
+            .build();
+    }
+    
+    /**
      * Validate event type
      */
     private void validateEventType(String eventType) {

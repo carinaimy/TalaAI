@@ -31,4 +31,10 @@ public class EventResponse {
     private String source;
     private Instant createdAt;
     private Instant updatedAt;
+
+    private String priority;
+
+    private Integer urgencyHours;
+
+    private String riskLevel;
 }

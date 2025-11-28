@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: file-service
+  profiles:
+    active: ${ACTIVE_PROFILE:dev}
+  
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/tala_db}
+    username: ${SPRING_DATASOURCE_USERNAME:tala}
+    password: ${SPRING_DATASOURCE_PASSWORD:tala_dev_2025}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
+      file-size-threshold: 2MB
+
+server:
+  port: ${SERVER_PORT:8087}
+
+# MinIO Configuration
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket-name: ${MINIO_BUCKET:tala-files}
+  public-url: ${MINIO_PUBLIC_URL:http://localhost:9000}
+
+# File Storage Configuration
+file:
+  storage:
+    type: ${FILE_STORAGE_TYPE:minio}  # minio or local
+    local-path: ${FILE_LOCAL_PATH:/tmp/tala-files}
+    allowed-extensions: jpg,jpeg,png,gif,pdf,mp4,mov,mp3,wav
+    max-size-mb: 50
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.tala.file: DEBUG
+    org.springframework.web: INFO

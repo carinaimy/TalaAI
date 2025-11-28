@@ -26,4 +26,10 @@ public class UpdateEventRequest {
     private Map<String, Object> eventData;
     
     private String aiSummary;
+
+    private String priority;
+
+    private Integer urgencyHours;
+
+    private String riskLevel;
 }

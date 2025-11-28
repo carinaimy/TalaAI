@@ -1,6 +1,8 @@
 package com.tala.ai.controller;
 
+import com.tala.ai.dto.TodayOverviewResponse;
 import com.tala.ai.service.PatternDetectionService;
+import com.tala.ai.service.TodayContentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -21,6 +23,7 @@ import java.util.Map;
 public class AIController {
     
     private final PatternDetectionService patternDetectionService;
+    private final TodayContentService todayContentService;
     
     @GetMapping("/patterns/sleep")
     public ResponseEntity<List<Map<String, Object>>> getSleepPatterns(

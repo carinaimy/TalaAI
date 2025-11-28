@@ -1,6 +1,8 @@
 package com.tala.query.controller;
 
+import com.tala.query.dto.DailyContextResponse;
 import com.tala.query.service.AnalyticsService;
+import com.tala.query.service.DailyAggregationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -12,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Analytics REST API
+ * Analytics and daily aggregation API
  */
 @RestController
 @RequestMapping("/api/v1/analytics")
@@ -21,6 +23,38 @@ import java.util.Map;
 public class AnalyticsController {
     
     private final AnalyticsService analyticsService;
+    private final DailyAggregationService aggregationService;
+    
+    @GetMapping("/health")
+    public String health() {
+        return "Query Service is running";
+    }
+    
+    /**
+     * Get daily context for AI services
+     */
+    @GetMapping("/daily-context")
+    public ResponseEntity<DailyContextResponse> getDailyContext(
+        @RequestParam Long profileId,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        log.debug("GET /api/v1/analytics/daily-context - profileId={}, date={}", profileId, date);
+        DailyContextResponse context = aggregationService.getDailyContext(profileId, date);
+        return ResponseEntity.ok(context);
+    }
+    
+    /**
+     * Get recent summaries
+     */
+    @GetMapping("/recent-summaries")
+    public ResponseEntity<List<DailyContextResponse>> getRecentSummaries(
+        @RequestParam Long profileId,
+        @RequestParam(defaultValue = "7") int days
+    ) {
+        log.debug("GET /api/v1/analytics/recent-summaries - profileId={}, days={}", profileId, days);
+        List<DailyContextResponse> summaries = aggregationService.getRecentSummaries(profileId, days);
+        return ResponseEntity.ok(summaries);
+    }
     
     @GetMapping("/daily-summary")
     public ResponseEntity<List<Map<String, Object>>> getDailySummary(

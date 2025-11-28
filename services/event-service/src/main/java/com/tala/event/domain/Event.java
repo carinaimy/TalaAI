@@ -60,4 +60,13 @@ public class Event extends BaseEntity {
     @Column(name = "source", length = 50)
     @Builder.Default
     private String source = "USER_INPUT";
+
+    @Column(name = "priority", length = 20)
+    private String priority;
+
+    @Column(name = "urgency_hours")
+    private Integer urgencyHours;
+
+    @Column(name = "risk_level", length = 20)
+    private String riskLevel;
 }

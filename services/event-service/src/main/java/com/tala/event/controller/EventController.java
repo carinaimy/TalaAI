@@ -133,4 +133,40 @@ public class EventController {
         long count = service.countByProfileAndTimeRange(profileId, startTime, endTime);
         return ResponseEntity.ok(count);
     }
+    
+    /**
+     * Get timeline events
+     */
+    @GetMapping("/timeline")
+    public ResponseEntity<List<com.tala.event.dto.TimelineEventResponse>> getTimeline(
+        @RequestParam Long profileId,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startTime,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endTime,
+        @RequestParam(required = false) List<String> eventTypes
+    ) {
+        log.debug("GET /api/v1/events/timeline - profileId={}, start={}, end={}, types={}", 
+            profileId, startTime, endTime, eventTypes);
+        
+        List<com.tala.event.dto.TimelineEventResponse> timeline = 
+            service.getTimelineEvents(profileId, startTime, endTime, eventTypes);
+        return ResponseEntity.ok(timeline);
+    }
+    
+    /**
+     * Get calendar month summary
+     */
+    @GetMapping("/calendar")
+    public ResponseEntity<com.tala.event.dto.CalendarMonthResponse> getCalendar(
+        @RequestParam Long profileId,
+        @RequestParam int year,
+        @RequestParam int month
+    ) {
+        log.debug("GET /api/v1/events/calendar - profileId={}, year={}, month={}", 
+            profileId, year, month);
+        
+        java.time.YearMonth yearMonth = java.time.YearMonth.of(year, month);
+        com.tala.event.dto.CalendarMonthResponse calendar = 
+            service.getCalendarMonth(profileId, yearMonth);
+        return ResponseEntity.ok(calendar);
+    }
 }

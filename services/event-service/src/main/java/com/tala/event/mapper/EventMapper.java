@@ -28,11 +28,17 @@ public interface EventMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "aiTags", ignore = true)
+    @Mapping(target = "priority", source = "priority")
+    @Mapping(target = "urgencyHours", source = "urgencyHours")
+    @Mapping(target = "riskLevel", source = "riskLevel")
     Event toEntity(CreateEventRequest request);
     
     /**
      * Convert Event entity to EventResponse
      */
+    @Mapping(target = "priority", source = "priority")
+    @Mapping(target = "urgencyHours", source = "urgencyHours")
+    @Mapping(target = "riskLevel", source = "riskLevel")
     EventResponse toResponse(Event event);
     
     /**
@@ -52,5 +58,8 @@ public interface EventMapper {
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "aiTags", ignore = true)
     @Mapping(target = "source", ignore = true)
+    @Mapping(target = "priority", source = "priority")
+    @Mapping(target = "urgencyHours", source = "urgencyHours")
+    @Mapping(target = "riskLevel", source = "riskLevel")
     void updateEntity(UpdateEventRequest request, @MappingTarget Event event);
 }
