@@ -1,0 +1,62 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'tala-backend'
+    environment: 'production'
+
+# Scrape configurations
+scrape_configs:
+  # Event Service
+  - job_name: 'event-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['event-service:8081']
+        labels:
+          service: 'event-service'
+  
+  # Query Service
+  - job_name: 'query-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['query-service:8082']
+        labels:
+          service: 'query-service'
+  
+  # AI Service
+  - job_name: 'ai-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['ai-service:8083']
+        labels:
+          service: 'ai-service'
+  
+  # User Service
+  - job_name: 'user-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['user-service:8084']
+        labels:
+          service: 'user-service'
+  
+  # Gateway Service
+  - job_name: 'gateway-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['gateway-service:8080']
+        labels:
+          service: 'gateway-service'
+  
+  # PostgreSQL Exporter (optional)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'postgresql'
+  
+  # Redis Exporter (optional)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'redis'

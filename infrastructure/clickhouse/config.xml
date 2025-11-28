@@ -1,0 +1,29 @@
+<clickhouse>
+    <logger>
+        <level>information</level>
+        <log>/var/log/clickhouse-server/clickhouse-server.log</log>
+        <errorlog>/var/log/clickhouse-server/clickhouse-server.err.log</errorlog>
+        <size>1000M</size>
+        <count>10</count>
+    </logger>
+    
+    <http_port>8123</http_port>
+    <tcp_port>9000</tcp_port>
+    
+    <!-- Connection limits -->
+    <max_connections>2048</max_connections>
+    <keep_alive_timeout>3</keep_alive_timeout>
+    <max_concurrent_queries>50</max_concurrent_queries>
+    
+    <!-- Memory limits -->
+    <max_memory_usage>2000000000</max_memory_usage>
+    <max_memory_usage_for_user>2000000000</max_memory_usage_for_user>
+    
+    <!-- Cache sizes (optimized for Apple Silicon) -->
+    <uncompressed_cache_size>1073741824</uncompressed_cache_size>
+    <mark_cache_size>536870912</mark_cache_size>
+    
+    <!-- Thread pools -->
+    <max_thread_pool_size>8</max_thread_pool_size>
+    <max_server_memory_usage>1500000000</max_server_memory_usage>
+</clickhouse>

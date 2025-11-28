@@ -1,0 +1,381 @@
+# Tala Backend V2
+
+AI-first baby care assistant backend - Clean slate rewrite optimized for Apple Silicon
+
+## 🏗️ Architecture
+
+```
+┌──────────────────────────────────────────────────────┐
+│              API Gateway (8080)                      │
+└────────┬─────────┬─────────┬──────────┬─────────────┘
+         │         │         │          │
+    ┌────▼───┐ ┌──▼────┐ ┌──▼────┐ ┌──▼────┐
+    │ Event  │ │ Query │ │  AI   │ │ User  │
+    │Service │ │Service│ │Service│ │Service│
+    │ (8081) │ │(8082) │ │(8083) │ │(8084) │
+    └────┬───┘ └──┬────┘ └──┬────┘ └──┬────┘
+         │        │         │         │
+    ┌────▼────────▼─────────▼─────────▼────┐
+    │         PostgreSQL (5432)             │
+    │         ClickHouse (8123)             │
+    │         Kafka (9092)                  │
+    │         Redis (6379)                  │
+    └──────────────────────────────────────┘
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Java 21** (Temurin recommended for ARM64)
+- **Docker Desktop** for Mac (Apple Silicon)
+- **Maven 3.9+**
+- **Git**
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   cd backend
+   ```
+
+2. **Set up environment**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+3. **Start infrastructure**
+   ```bash
+   ./scripts/start-dev.sh
+   ```
+
+4. **Build the project**
+   ```bash
+   mvn clean install
+   ```
+
+5. **Run a service**
+   ```bash
+   cd services/event-service
+   mvn spring-boot:run
+   ```
+
+## 🐳 Docker Setup
+
+### Development Environment
+
+```bash
+# Start all infrastructure services
+./scripts/start-dev.sh
+
+# Stop all services
+./scripts/stop-dev.sh
+
+# View logs
+docker-compose logs -f
+
+# Clean up (⚠️ deletes all data)
+docker-compose down -v
+```
+
+### Production Deployment (Mac Mini)
+
+```bash
+# Prepare production environment
+cp .env.production.example .env.production
+# Edit .env.production with secure credentials
+
+# Deploy to production
+./scripts/deploy-prod.sh
+
+# Backup data
+./scripts/backup.sh
+```
+
+## 📊 Services
+
+| Service | Port | Description |
+|---------|------|-------------|
+| **Gateway** | 8080 | API Gateway, routing, authentication |
+| **Event Service** | 8081 | Event CRUD, Kafka producer |
+| **Query Service** | 8082 | Analytics queries, ClickHouse |
+| **AI Service** | 8083 | Pattern detection, insights |
+| **User Service** | 8084 | User & profile management |
+| **PostgreSQL** | 5432 | Operational database |
+| **ClickHouse** | 8123 | Analytics database |
+| **Kafka** | 9092 | Event streaming |
+| **Redis** | 6379 | Caching layer |
+| **Prometheus** | 9090 | Metrics collection |
+| **Grafana** | 3000 | Metrics visualization |
+
+## 🔧 Development
+
+### Project Structure
+
+```
+backend/
+├── shared/                    # Shared libraries
+│   ├── common-core/          # Core utilities, base classes
+│   ├── common-kafka/         # Kafka producers/consumers
+│   └── common-clickhouse/    # ClickHouse utilities
+├── services/                 # Microservices
+│   ├── event-service/        # Event management
+│   ├── query-service/        # Analytics queries
+│   ├── ai-service/           # AI/ML features
+│   ├── user-service/         # User management
+│   └── gateway-service/      # API Gateway
+├── infrastructure/           # Infrastructure configs
+│   ├── postgresql/          # PostgreSQL init scripts
+│   ├── clickhouse/          # ClickHouse configs
+│   └── monitoring/          # Prometheus, Grafana
+├── scripts/                 # Deployment scripts
+└── .github/workflows/       # CI/CD pipelines
+```
+
+### Building Modules
+
+```bash
+# Build all modules
+mvn clean install
+
+# Build specific module
+cd shared/common-core
+mvn clean install
+
+# Skip tests
+mvn clean install -DskipTests
+
+# Run tests only
+mvn test
+
+# Generate coverage report
+mvn jacoco:report
+```
+
+### Running Services
+
+```bash
+# Run with Maven
+cd services/event-service
+mvn spring-boot:run
+
+# Run with specific profile
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+
+# Run with debugging
+mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"
+```
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+mvn test
+
+# Run specific test class
+mvn test -Dtest=EventServiceTest
+
+# Run with coverage
+mvn test jacoco:report
+
+# View coverage report
+open target/site/jacoco/index.html
+```
+
+## 🔒 Security
+
+### Environment Variables
+
+**Never commit sensitive data!** Use environment variables:
+
+```bash
+# Development
+.env              # Local development (git-ignored)
+
+# Production
+.env.production   # Production (git-ignored)
+```
+
+### GitHub Secrets
+
+Configure these secrets in GitHub repository settings:
+
+- `SSH_PRIVATE_KEY` - SSH key for Mac Mini access
+- `SERVER_HOST` - Mac Mini IP or domain
+- `SERVER_USER` - Server username
+- `SLACK_WEBHOOK` - Slack notifications (optional)
+
+## 🚢 Deployment
+
+### CI/CD Pipeline
+
+GitHub Actions automatically:
+1. ✅ Runs tests on every PR
+2. 🔨 Builds Docker images on main branch
+3. 🚀 Deploys to Mac Mini on main branch
+4. 🔍 Runs security scans
+
+### Manual Deployment
+
+```bash
+# Build and push images
+docker-compose -f docker-compose.prod.yml build
+docker-compose -f docker-compose.prod.yml push
+
+# Deploy on Mac Mini
+ssh user@mac-mini
+cd ~/tala-backend
+docker-compose -f docker-compose.prod.yml pull
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+## 🍎 Apple Silicon Optimization
+
+All Docker images use `platform: linux/arm64` for optimal performance on:
+- MacBook Air (Development)
+- Mac Mini (Production)
+
+### Resource Limits
+
+**Development** (MacBook Air):
+- CPU: 0.5-1.0 cores per service
+- Memory: 256-512MB per service
+
+**Production** (Mac Mini):
+- CPU: 1.0-2.0 cores per service
+- Memory: 512MB-1GB per service
+
+## 📊 Monitoring
+
+### Prometheus Metrics
+
+Access: http://localhost:9090
+
+**Key Metrics:**
+- `http_server_requests_seconds` - Request latency
+- `jvm_memory_used_bytes` - Memory usage
+- `system_cpu_usage` - CPU usage
+
+### Grafana Dashboards
+
+Access: http://localhost:3000 (admin/admin)
+
+**Pre-configured Dashboards:**
+- Application Overview
+- JVM Metrics
+- Database Performance
+- Request Analytics
+
+## 🐛 Troubleshooting
+
+### Docker Issues
+
+```bash
+# Reset Docker
+./scripts/stop-dev.sh
+docker-compose down -v
+./scripts/start-dev.sh
+
+# View logs
+docker-compose logs -f [service-name]
+
+# Check service health
+docker ps
+docker stats
+```
+
+### Build Issues
+
+```bash
+# Clean Maven cache
+mvn clean
+rm -rf ~/.m2/repository/com/tala
+
+# Update dependencies
+mvn clean install -U
+
+# Check Java version
+java -version  # Should be 21
+```
+
+### Database Issues
+
+```bash
+# Connect to PostgreSQL
+docker exec -it tala-postgres-dev psql -U tala -d tala_db
+
+# Connect to ClickHouse
+docker exec -it tala-clickhouse-dev clickhouse-client
+
+# Reset databases
+docker-compose down -v
+docker-compose up -d
+```
+
+## 📚 API Documentation
+
+### Event Service
+
+```bash
+# Create event
+POST /api/v1/events
+Content-Type: application/json
+{
+  "profileId": 123,
+  "userId": 456,
+  "eventType": "FEEDING",
+  "eventTime": "2024-01-01T10:30:00Z",
+  "eventData": {
+    "amount": 120,
+    "unit": "ml"
+  }
+}
+
+# Get event
+GET /api/v1/events/{id}
+
+# Query events
+GET /api/v1/events?profileId=123&startTime=...&endTime=...
+```
+
+Full API documentation: [API_SPEC.md](./docs/API_SPEC.md)
+
+## 🤝 Contributing
+
+1. Create a feature branch
+2. Make your changes
+3. Run tests: `mvn test`
+4. Commit with conventional commits
+5. Create a pull request
+
+### Commit Convention
+
+```
+feat(event-service): add event validation
+fix(query-service): resolve timeout issue
+docs: update API documentation
+test(ai-service): add pattern detection tests
+chore(deps): update spring boot to 3.2.2
+```
+
+## 📝 Documentation
+
+- [Implementation Plan](../docs/BACKEND-V2-IMPLEMENTATION-PLAN.md)
+- [Week 2-10 Plan](../docs/BACKEND-V2-WEEK-2-10-PLAN.md)
+- [Quick Start Guide](../docs/NEW-BACKEND-QUICK-START.md)
+
+## 📄 License
+
+MIT License - See [LICENSE](../LICENSE) for details
+
+## 🆘 Support
+
+- Create an issue on GitHub
+- Check existing documentation
+- Review Docker logs
+- Contact the team
+
+---
+
+**Built with ❤️ for Apple Silicon**
