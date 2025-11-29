@@ -1,0 +1,399 @@
+# TalaAI Backend Services - Complete Stack
+# Each microservice runs in its own container
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.services.yml up -d
+
+services:
+  # ============================================
+  # BUSINESS SERVICES (Microservices)
+  # ============================================
+  
+  # User Service - Authentication, Profiles, Interest Tracking
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: user-service
+    image: tala/user-service:latest
+    container_name: tala-user-service
+    platform: linux/arm64
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tala_db
+      SPRING_DATASOURCE_USERNAME: tala
+      SPRING_DATASOURCE_PASSWORD: tala_dev_2025
+      USER_SERVICE_PORT: 8081
+      JWT_SECRET: dev-secret-key-change-in-production-minimum-64-characters-long-for-security
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    networks:
+      - tala-network
+
+  # Event Service - Universal Event Storage
+  event-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: event-service
+    image: tala/event-service:latest
+    container_name: tala-event-service
+    platform: linux/arm64
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tala_db
+      SPRING_DATASOURCE_USERNAME: tala
+      SPRING_DATASOURCE_PASSWORD: tala_dev_2025
+      EVENT_SERVICE_PORT: 8082
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    networks:
+      - tala-network
+
+  # Reminder Service - Reminders and Notifications
+  reminder-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: reminder-service
+    image: tala/reminder-service:latest
+    container_name: tala-reminder-service
+    platform: linux/arm64
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tala_db
+      SPRING_DATASOURCE_USERNAME: tala
+      SPRING_DATASOURCE_PASSWORD: tala_dev_2025
+      REMINDER_SERVICE_PORT: 8086
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8086/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 384M
+        reservations:
+          cpus: '0.25'
+          memory: 192M
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    networks:
+      - tala-network
+
+  # Media Service - Photos and Videos
+  media-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: media-service
+    image: tala/media-service:latest
+    container_name: tala-media-service
+    platform: linux/arm64
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tala_db
+      SPRING_DATASOURCE_USERNAME: tala
+      SPRING_DATASOURCE_PASSWORD: tala_dev_2025
+      MEDIA_SERVICE_PORT: 8087
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8087/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 384M
+        reservations:
+          cpus: '0.25'
+          memory: 192M
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    networks:
+      - tala-network
+
+  # File Service - File Storage (MinIO)
+  file-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: file-service
+    image: tala/file-service:latest
+    container_name: tala-file-service
+    platform: linux/arm64
+    ports:
+      - "8088:8088"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tala_db
+      SPRING_DATASOURCE_USERNAME: tala
+      SPRING_DATASOURCE_PASSWORD: tala_dev_2025
+      SERVER_PORT: 8088
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: tala-files
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8088/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 384M
+        reservations:
+          cpus: '0.25'
+          memory: 192M
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    networks:
+      - tala-network
+
+  # Query Service - Analytics and Daily Summaries
+  query-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: query-service
+    image: tala/query-service:latest
+    container_name: tala-query-service
+    platform: linux/arm64
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tala_db
+      SPRING_DATASOURCE_USERNAME: tala
+      SPRING_DATASOURCE_PASSWORD: tala_dev_2025
+      QUERY_SERVICE_PORT: 8083
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    networks:
+      - tala-network
+
+  # AI Service - AI-Generated Content
+  ai-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: ai-service
+    image: tala/ai-service:latest
+    container_name: tala-ai-service
+    platform: linux/arm64
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tala_db
+      SPRING_DATASOURCE_USERNAME: tala
+      SPRING_DATASOURCE_PASSWORD: tala_dev_2025
+      AI_SERVICE_PORT: 8085
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: gemini-2.0-flash-exp
+      MEM0_URL: http://192.168.1.112:8000
+      MLX_AUDIO_URL: http://192.168.1.112:5000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    networks:
+      - tala-network
+
+  # Personalization Service - Today/Insights/Tala Pages
+  personalization-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: personalization-service
+    image: tala/personalization-service:latest
+    container_name: tala-personalization-service
+    platform: linux/arm64
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      PERSONALIZATION_SERVICE_PORT: 8084
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      # Service URLs
+      FEIGN_SERVICES_USER_SERVICE_URL: http://user-service:8081
+      FEIGN_SERVICES_EVENT_SERVICE_URL: http://event-service:8082
+      FEIGN_SERVICES_QUERY_SERVICE_URL: http://query-service:8083
+      FEIGN_SERVICES_REMINDER_SERVICE_URL: http://reminder-service:8086
+      FEIGN_SERVICES_MEDIA_SERVICE_URL: http://media-service:8087
+      FEIGN_SERVICES_AI_SERVICE_URL: http://ai-service:8085
+    depends_on:
+      user-service:
+        condition: service_healthy
+      event-service:
+        condition: service_healthy
+      query-service:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    networks:
+      - tala-network
+
+  # Gateway Service - API Gateway (Future)
+  # gateway-service:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.service
+  #     args:
+  #       SERVICE_NAME: gateway-service
+  #   image: tala/gateway-service:latest
+  #   container_name: tala-gateway-service
+  #   platform: linux/arm64
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     SPRING_PROFILES_ACTIVE: dev
+  #     GATEWAY_SERVICE_PORT: 8080
+  #   depends_on:
+  #     - user-service
+  #     - event-service
+  #   networks:
+  #     - tala-network
+  #   restart: unless-stopped
+
+networks:
+  tala-network:
+    driver: bridge

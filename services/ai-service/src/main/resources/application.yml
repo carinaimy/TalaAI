@@ -4,10 +4,27 @@ spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   datasource:
+    # PostgreSQL for ai schema (ai_today_overviews)
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/tala_db}
+    username: ${SPRING_DATASOURCE_USERNAME:tala}
+    password: ${SPRING_DATASOURCE_PASSWORD:tala_dev_2025}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    schemas: ai
+    table: flyway_schema_history_ai
+    default-schema: ai
+  # ClickHouse for analytics queries (future)
+  clickhouse:
     url: ${CLICKHOUSE_URL:jdbc:clickhouse://localhost:8123/tala_analytics}
     username: ${CLICKHOUSE_USER:default}
     password: ${CLICKHOUSE_PASSWORD:}
-    driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:

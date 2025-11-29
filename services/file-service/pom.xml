@@ -7,8 +7,8 @@
     
     <parent>
         <groupId>com.tala</groupId>
-        <artifactId>tala-backend</artifactId>
-        <version>1.0.0</version>
+        <artifactId>tala-backend-v2</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     
@@ -21,6 +21,7 @@
         <dependency>
             <groupId>com.tala</groupId>
             <artifactId>common-core</artifactId>
+            <version>${project.version}</version>
         </dependency>
         
         <!-- Spring Boot Web -->

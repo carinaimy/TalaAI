@@ -22,10 +22,14 @@
 
     <modules>
         <module>shared/common-core</module>
+        <module>services/user-service</module>
         <module>services/event-service</module>
+        <module>services/reminder-service</module>
+        <module>services/media-service</module>
+        <module>services/file-service</module>
         <module>services/query-service</module>
         <module>services/ai-service</module>
-        <module>services/user-service</module>
+        <module>services/personalization-service</module>
         <module>services/gateway-service</module>
     </modules>
 

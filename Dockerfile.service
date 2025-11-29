@@ -1,0 +1,54 @@
+# Generic Dockerfile for all TalaAI services
+# Usage: docker build -f Dockerfile.service --build-arg SERVICE_NAME=user-service -t tala-user-service .
+
+ARG SERVICE_NAME
+FROM eclipse-temurin:21-jdk-alpine AS builder
+
+ARG SERVICE_NAME
+WORKDIR /build
+
+# Install Maven
+RUN apk add --no-cache maven
+
+# Copy parent pom
+COPY pom.xml ./
+
+# Copy common modules
+COPY shared ./shared
+
+# Copy all service directories (needed for Maven reactor)
+COPY services ./services
+
+# Build the specific service
+RUN mvn clean package -DskipTests -pl services/${SERVICE_NAME} -am
+
+# Runtime stage
+FROM eclipse-temurin:21-jre-alpine
+
+ARG SERVICE_NAME
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1001 tala && \
+    adduser -D -u 1001 -G tala tala
+
+# Copy jar from builder
+COPY --from=builder /build/services/${SERVICE_NAME}/target/*.jar app.jar
+
+# Change ownership
+RUN chown -R tala:tala /app
+
+USER tala
+
+# Default port (override in docker-compose)
+EXPOSE 8080
+
+# Health check (override in docker-compose for specific ports)
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+
+ENTRYPOINT ["java", \
+    "-XX:+UseContainerSupport", \
+    "-XX:MaxRAMPercentage=75.0", \
+    "-Djava.security.egd=file:/dev/./urandom", \
+    "-jar", "app.jar"]
