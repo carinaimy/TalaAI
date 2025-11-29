@@ -1,19 +1,8 @@
 version: '3.8'
 
 # Local Development Environment - Apple Silicon Optimized
-# 
-# Usage:
-#   Minimal (default):     docker-compose up -d
-#   + Analytics:           docker-compose --profile analytics up -d
-#   + Events:              docker-compose --profile events up -d
-#   + Monitoring:          docker-compose --profile monitoring up -d
-#   Full stack:            docker-compose --profile analytics --profile events --profile monitoring up -d
-#
-# Or use the helper script:
-#   ./scripts/start-dev.sh [--minimal|--analytics|--events|--full]
-
 services:
-  # PostgreSQL - Operational Database (CORE - Always runs)
+  # PostgreSQL - Operational Database
   postgres:
     image: postgres:16-alpine
     container_name: tala-postgres-dev
@@ -43,31 +32,8 @@ services:
     networks:
       - tala-network
 
-  # Redis - Cache (CORE - Always runs)
-  redis:
-    image: redis:7-alpine
-    container_name: tala-redis-dev
-    platform: linux/arm64
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis_data:/data
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.25'
-          memory: 128M
-    networks:
-      - tala-network
-
-  # ClickHouse - Analytics Database (OPTIONAL - analytics profile)
+  # ClickHouse - Analytics Database
   clickhouse:
-    profiles:
-      - analytics
     image: clickhouse/clickhouse-server:24.1-alpine
     container_name: tala-clickhouse-dev
     platform: linux/arm64
@@ -93,10 +59,8 @@ services:
     networks:
       - tala-network
 
-  # Zookeeper (for Kafka) (OPTIONAL - events profile)
+  # Zookeeper (for Kafka)
   zookeeper:
-    profiles:
-      - events
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: tala-zookeeper-dev
     platform: linux/arm64
@@ -114,10 +78,8 @@ services:
     networks:
       - tala-network
 
-  # Apache Kafka (OPTIONAL - events profile)
+  # Apache Kafka
   kafka:
-    profiles:
-      - events
     image: confluentinc/cp-kafka:7.5.0
     container_name: tala-kafka-dev
     platform: linux/arm64
@@ -145,10 +107,29 @@ services:
     networks:
       - tala-network
 
-  # Prometheus - Metrics (OPTIONAL - monitoring profile)
+  # Redis - Cache
+  redis:
+    image: redis:7-alpine
+    container_name: tala-redis-dev
+    platform: linux/arm64
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    networks:
+      - tala-network
+
+  # Prometheus - Metrics
   prometheus:
-    profiles:
-      - monitoring
     image: prom/prometheus:latest
     container_name: tala-prometheus-dev
     platform: linux/arm64
@@ -172,10 +153,8 @@ services:
     networks:
       - tala-network
 
-  # Grafana - Dashboards (OPTIONAL - monitoring profile)
+  # Grafana - Dashboards
   grafana:
-    profiles:
-      - monitoring
     image: grafana/grafana:latest
     container_name: tala-grafana-dev
     platform: linux/arm64

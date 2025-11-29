@@ -47,7 +47,14 @@ AI-first baby care assistant backend - Clean slate rewrite optimized for Apple S
 
 3. **Start infrastructure**
    ```bash
+   # Minimal mode (PostgreSQL + Redis only) - Recommended for daily development
    ./scripts/start-dev.sh
+   
+   # Or choose a specific mode:
+   ./scripts/start-dev.sh --analytics   # + ClickHouse
+   ./scripts/start-dev.sh --events      # + Kafka + Zookeeper
+   ./scripts/start-dev.sh --monitoring  # + Prometheus + Grafana
+   ./scripts/start-dev.sh --full        # All services
    ```
 
 4. **Build the project**
@@ -63,12 +70,53 @@ AI-first baby care assistant backend - Clean slate rewrite optimized for Apple S
 
 ## 🐳 Docker Setup
 
-### Development Environment
+### Development Environment Modes
+
+The development environment supports **4 modes** to optimize resource usage:
+
+#### Minimal Mode (Default) - Recommended for Daily Development
+```bash
+./scripts/start-dev.sh
+# Starts: PostgreSQL + Redis only
+# Resources: ~1 CPU core, ~768MB RAM
+# Use case: Most feature development
+```
+
+#### Analytics Mode
+```bash
+./scripts/start-dev.sh --analytics
+# Adds: ClickHouse
+# Resources: ~3 CPU cores, ~1.5GB RAM
+# Use case: Testing analytics queries
+```
+
+#### Events Mode
+```bash
+./scripts/start-dev.sh --events
+# Adds: Kafka + Zookeeper
+# Resources: ~2.5 CPU cores, ~1.5GB RAM
+# Use case: Testing event streaming
+```
+
+#### Monitoring Mode
+```bash
+./scripts/start-dev.sh --monitoring
+# Adds: Prometheus + Grafana
+# Resources: ~1.5 CPU cores, ~1GB RAM
+# Use case: Testing metrics and dashboards
+```
+
+#### Full Mode
+```bash
+./scripts/start-dev.sh --full
+# Starts: All services
+# Resources: ~5.5 CPU cores, ~3.5GB RAM
+# Use case: Pre-deployment testing
+```
+
+### Common Commands
 
 ```bash
-# Start all infrastructure services
-./scripts/start-dev.sh
-
 # Stop all services
 ./scripts/stop-dev.sh
 
