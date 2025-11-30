@@ -34,6 +34,12 @@ public class CreateEventRequest {
     @PastOrPresent(message = "Event time cannot be in the future")
     private Instant eventTime;
     
+    // Frontend-compatible fields
+    private String notes;
+    
+    private Map<String, Object> metadata;
+    
+    // Legacy field for backward compatibility
     @NotNull(message = "Event data is required")
     @Size(min = 1, message = "Event data cannot be empty")
     private Map<String, Object> eventData;

@@ -21,7 +21,15 @@ public class ProfileResponse {
     private String timezone;
     private String gender;
     private String photoUrl;
+    private String parentName;
+    private String parentRole;
+    private String zipcode;
+    private String concerns;
+    private Boolean hasDaycare;
+    private String daycareName;
+    private String updateMethod;
     private Integer ageInDays;
+    private Boolean isDefault;
     private Instant createdAt;
     private Instant updatedAt;
 }

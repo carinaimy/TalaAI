@@ -1,7 +1,5 @@
 package com.tala.user.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Past;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,18 +7,17 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
+/**
+ * Request DTO for partial profile updates (PATCH-style)
+ * All fields are optional and only non-null values will be applied.
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProfileRequest {
-    
-    @NotBlank(message = "Baby name is required")
+public class ProfileUpdateRequest {
     private String babyName;
-    
-    @Past(message = "Birth date must be in the past")
     private LocalDate birthDate;
-    
     private String timezone;
     private String gender;
     private String photoUrl;

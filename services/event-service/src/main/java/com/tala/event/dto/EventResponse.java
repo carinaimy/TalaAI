@@ -25,7 +25,14 @@ public class EventResponse {
     private Long userId;
     private String eventType;
     private Instant eventTime;
+    
+    // Frontend-compatible fields
+    private String notes;
+    private Map<String, Object> metadata;
+    
+    // Legacy field for backward compatibility
     private Map<String, Object> eventData;
+    
     private String aiSummary;
     private List<String> aiTags;
     private String source;

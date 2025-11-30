@@ -2,6 +2,7 @@ package com.tala.user.controller;
 
 import com.tala.user.dto.ProfileRequest;
 import com.tala.user.dto.ProfileResponse;
+import com.tala.user.dto.ProfileUpdateRequest;
 import com.tala.user.service.ProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +50,7 @@ public class ProfileController {
     @PutMapping("/{id}")
     public ResponseEntity<ProfileResponse> updateProfile(
         @PathVariable Long id,
-        @Valid @RequestBody ProfileRequest request
+        @RequestBody ProfileUpdateRequest request
     ) {
         log.info("PUT /api/v1/profiles/{}", id);
         ProfileResponse profile = profileService.updateProfile(id, request);
