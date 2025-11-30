@@ -76,11 +76,12 @@ spring:
           filters:
             - StripPrefix=0
       
-      default-filters:
-        - name: RequestRateLimiter
-          args:
-            redis-rate-limiter.replenishRate: 100
-            redis-rate-limiter.burstCapacity: 200
+      # Temporarily disabled for testing
+      # default-filters:
+      #   - name: RequestRateLimiter
+      #     args:
+      #       redis-rate-limiter.replenishRate: 100
+      #       redis-rate-limiter.burstCapacity: 200
       
       globalcors:
         corsConfigurations:
@@ -121,6 +122,10 @@ management:
     gateway:
       enabled: true
 
+jwt:
+  secret: ${JWT_SECRET:dev-secret-key-change-in-production-minimum-64-characters-long}
+  expiration: 86400000
+
 logging:
   level:
     root: INFO
@@ -132,6 +137,8 @@ spring:
   config:
     activate:
       on-profile: prod
+jwt:
+  secret: ${JWT_SECRET}
 logging:
   level:
     root: WARN

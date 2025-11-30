@@ -9,10 +9,29 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:tala}
     password: ${SPRING_DATASOURCE_PASSWORD:tala_dev_2025}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        jakarta:
+          persistence:
+            schema-generation:
+              database:
+                action: none
   flyway:
     enabled: true
     baseline-on-migrate: true
@@ -20,6 +39,7 @@ spring:
     schemas: analytics
     table: flyway_schema_history_analytics
     default-schema: analytics
+    validate-on-migrate: true
   # ClickHouse for analytics queries (future)
   clickhouse:
     url: ${CLICKHOUSE_URL:jdbc:clickhouse://localhost:8123/tala_analytics}
@@ -39,16 +59,33 @@ spring:
       password: ${SPRING_REDIS_PASSWORD:}
 
 server:
-  port: ${QUERY_SERVICE_PORT:8082}
+  port: ${QUERY_SERVICE_PORT:8083}
+  compression:
+    enabled: true
+  error:
+    include-message: always
+    include-binding-errors: always
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
 
 logging:
   level:
     root: INFO
     com.tala: DEBUG
+    org.springframework.web: INFO
+    org.springframework.kafka: INFO
+    org.hibernate.SQL: DEBUG
     com.clickhouse: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

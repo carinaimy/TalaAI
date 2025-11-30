@@ -1,19 +1,34 @@
+# syntax=docker/dockerfile:1.4
 # Multi-stage build for User Service
+# Optimized for Docker layer caching with BuildKit cache mounts
+# Build from root: cd ../.. && DOCKER_BUILDKIT=1 docker build -f services/user-service/Dockerfile -t tala/user-service .
 FROM eclipse-temurin:21-jdk-alpine AS builder
 
 WORKDIR /app
 
-# Copy parent pom and common modules first (for better caching)
+# Install Maven
+RUN apk add --no-cache maven
+
+# LAYER 1: Copy only POM files for dependency resolution
 COPY pom.xml ./
+COPY shared/common-core/pom.xml ./shared/common-core/
+COPY services/user-service/pom.xml ./services/user-service/
+
+# Download dependencies (cached unless pom.xml changes)
+# Use BuildKit cache mount for Maven repository
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn dependency:go-offline -pl services/user-service -am || true
+
+# LAYER 2: Copy shared module source
 COPY shared/common-core ./shared/common-core
 
-# Copy service files
-COPY services/user-service/pom.xml ./services/user-service/
+# LAYER 3: Copy service source code
 COPY services/user-service/src ./services/user-service/src
 
-# Build the application
-RUN apk add --no-cache maven && \
-    mvn clean package -DskipTests -f services/user-service/pom.xml
+# Build the application (only rebuilds if source changed)
+# Use BuildKit cache mount for Maven repository
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn clean package -DskipTests -pl services/user-service -am
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine

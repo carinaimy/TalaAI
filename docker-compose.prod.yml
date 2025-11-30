@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Production Environment - Mac Mini (Apple Silicon)
 services:
   # PostgreSQL - Operational Database
@@ -197,8 +195,10 @@ services:
   # Event Service
   event-service:
     build:
-      context: ./services/event-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: event-service
     image: tala/event-service:latest
     container_name: tala-event-service
     platform: linux/arm64
@@ -231,8 +231,10 @@ services:
   # Gateway Service
   gateway-service:
     build:
-      context: ./services/gateway-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: gateway-service
     image: tala/gateway-service:latest
     container_name: tala-gateway-service
     platform: linux/arm64

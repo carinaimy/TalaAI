@@ -5,12 +5,16 @@ import com.tala.core.exception.TalaException;
 import com.tala.user.domain.User;
 import com.tala.user.dto.AuthResponse;
 import com.tala.user.dto.LoginRequest;
+import com.tala.user.dto.ProfileResponse;
 import com.tala.user.dto.RegisterRequest;
 import com.tala.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * Authentication service
@@ -22,6 +26,8 @@ public class AuthService {
     
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
+    private final ProfileService profileService;
     
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -33,21 +39,26 @@ public class AuthService {
                 "User with email " + request.getEmail() + " already exists");
         }
         
-        // Create user
+        // Create user with BCrypt hashed password
         User user = User.builder()
             .email(request.getEmail())
-            .passwordHash(hashPassword(request.getPassword()))
+            .passwordHash(passwordEncoder.encode(request.getPassword()))
             .fullName(request.getFullName())
             .build();
         
         user = userRepository.save(user);
         
-        // Generate JWT token
-        String token = jwtService.generateToken(user.getId(), user.getEmail());
+        // Generate access and refresh tokens
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail());
+        String refreshToken = jwtService.generateRefreshToken(user.getId(), user.getEmail());
+        Long expiresIn = jwtService.getAccessTokenExpirationMs() / 1000; // Convert to seconds
         
-        log.info("User registered successfully: {}", user.getEmail());
+        // Fetch user's baby profiles
+        List<ProfileResponse> babyProfiles = profileService.getUserProfiles(user.getId());
         
-        return AuthResponse.of(token, user.getId(), user.getEmail(), user.getFullName());
+        log.info("User registered successfully: {}, profiles count: {}", user.getEmail(), babyProfiles.size());
+        
+        return AuthResponse.of(accessToken, refreshToken, expiresIn, user.getId(), user.getEmail(), user.getFullName(), babyProfiles);
     }
     
     @Transactional(readOnly = true)
@@ -59,26 +70,62 @@ public class AuthService {
             .orElseThrow(() -> new TalaException(ErrorCode.INVALID_CREDENTIALS, 
                 "Invalid email or password"));
         
-        // Verify password
-        if (!verifyPassword(request.getPassword(), user.getPasswordHash())) {
+        // Verify password using BCrypt
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new TalaException(ErrorCode.INVALID_CREDENTIALS, 
                 "Invalid email or password");
         }
         
-        // Generate JWT token
-        String token = jwtService.generateToken(user.getId(), user.getEmail());
+        // Generate access and refresh tokens
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail());
+        String refreshToken = jwtService.generateRefreshToken(user.getId(), user.getEmail());
+        Long expiresIn = jwtService.getAccessTokenExpirationMs() / 1000; // Convert to seconds
         
-        log.info("User logged in successfully: {}", user.getEmail());
+        // Fetch user's baby profiles
+        List<ProfileResponse> babyProfiles = profileService.getUserProfiles(user.getId());
         
-        return AuthResponse.of(token, user.getId(), user.getEmail(), user.getFullName());
+        log.info("User logged in successfully: {}, profiles count: {}", user.getEmail(), babyProfiles.size());
+        
+        return AuthResponse.of(accessToken, refreshToken, expiresIn, user.getId(), user.getEmail(), user.getFullName(), babyProfiles);
     }
     
-    private String hashPassword(String password) {
-        // Simple hash for now - in production use BCrypt
-        return "hashed_" + password;
-    }
-    
-    private boolean verifyPassword(String password, String passwordHash) {
-        return passwordHash.equals("hashed_" + password);
+    @Transactional(readOnly = true)
+    public AuthResponse refreshToken(String refreshToken) {
+        log.info("Refresh token request");
+        
+        // Validate refresh token
+        if (!jwtService.validateToken(refreshToken)) {
+            throw new TalaException(ErrorCode.INVALID_CREDENTIALS, 
+                "Invalid or expired refresh token");
+        }
+        
+        // Verify it's a refresh token
+        if (!jwtService.isRefreshToken(refreshToken)) {
+            throw new TalaException(ErrorCode.INVALID_CREDENTIALS, 
+                "Token is not a refresh token");
+        }
+        
+        // Extract user information
+        Long userId = jwtService.getUserIdFromToken(refreshToken);
+        String email = jwtService.getEmailFromToken(refreshToken);
+        
+        if (userId == null || email == null) {
+            throw new TalaException(ErrorCode.INVALID_CREDENTIALS, 
+                "Invalid token claims");
+        }
+        
+        // Verify user still exists and is not deleted
+        User user = userRepository.findByIdAndNotDeleted(userId)
+            .orElseThrow(() -> new TalaException(ErrorCode.USER_NOT_FOUND, 
+                "User not found or has been deleted"));
+        
+        // Generate new access and refresh tokens
+        String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getEmail());
+        String newRefreshToken = jwtService.generateRefreshToken(user.getId(), user.getEmail());
+        Long expiresIn = jwtService.getAccessTokenExpirationMs() / 1000;
+        
+        log.info("Tokens refreshed successfully for user: {}", user.getEmail());
+        
+        return AuthResponse.of(newAccessToken, newRefreshToken, expiresIn, user.getId(), user.getEmail(), user.getFullName());
     }
 }

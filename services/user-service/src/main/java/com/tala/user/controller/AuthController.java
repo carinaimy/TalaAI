@@ -2,6 +2,7 @@ package com.tala.user.controller;
 
 import com.tala.user.dto.AuthResponse;
 import com.tala.user.dto.LoginRequest;
+import com.tala.user.dto.RefreshTokenRequest;
 import com.tala.user.dto.RegisterRequest;
 import com.tala.user.service.AuthService;
 import jakarta.validation.Valid;
@@ -34,6 +35,15 @@ public class AuthController {
     ) {
         log.info("POST /api/v1/auth/login - {}", request.getEmail());
         AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refreshToken(
+        @Valid @RequestBody RefreshTokenRequest request
+    ) {
+        log.info("POST /api/v1/auth/refresh");
+        AuthResponse response = authService.refreshToken(request.getRefreshToken());
         return ResponseEntity.ok(response);
     }
 }

@@ -5,25 +5,45 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuthResponse {
     
-    private String token;
+    private String accessToken;
+    private String refreshToken;
     private String tokenType;
+    private Long expiresIn;
     private Long userId;
     private String email;
     private String fullName;
+    private List<ProfileResponse> babyProfiles;
     
-    public static AuthResponse of(String token, Long userId, String email, String fullName) {
+    public static AuthResponse of(String accessToken, String refreshToken, Long expiresIn, Long userId, String email, String fullName) {
         return AuthResponse.builder()
-            .token(token)
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
             .tokenType("Bearer")
+            .expiresIn(expiresIn)
             .userId(userId)
             .email(email)
             .fullName(fullName)
+            .build();
+    }
+    
+    public static AuthResponse of(String accessToken, String refreshToken, Long expiresIn, Long userId, String email, String fullName, List<ProfileResponse> babyProfiles) {
+        return AuthResponse.builder()
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
+            .tokenType("Bearer")
+            .expiresIn(expiresIn)
+            .userId(userId)
+            .email(email)
+            .fullName(fullName)
+            .babyProfiles(babyProfiles)
             .build();
     }
 }

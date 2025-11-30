@@ -32,6 +32,7 @@ spring:
     default-schema: reminders
   
   kafka:
+    enabled: ${SPRING_KAFKA_ENABLED:false}
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: reminder-service
@@ -40,7 +41,7 @@ spring:
       auto-offset-reset: earliest
 
 server:
-  port: ${REMINDER_SERVICE_PORT:8085}
+  port: ${REMINDER_SERVICE_PORT:8086}
   compression:
     enabled: true
 
@@ -52,8 +53,17 @@ management:
   endpoint:
     health:
       show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
 
 logging:
   level:
     root: INFO
     com.tala: DEBUG
+    org.springframework.web: INFO
+    org.springframework.kafka: INFO
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

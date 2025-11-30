@@ -5,6 +5,10 @@
 
 set -e
 
+# Enable Docker BuildKit for better caching and performance
+export DOCKER_BUILDKIT=1
+export COMPOSE_DOCKER_CLI_BUILD=1
+
 echo "======================================"
 echo "TalaAI Backend - Starting All Services"
 echo "======================================"
@@ -24,8 +28,8 @@ docker-compose -f docker-compose.yml -f docker-compose.services.yml down
 echo -e "${YELLOW}Step 2: Building all service images...${NC}"
 echo "This may take 5-10 minutes on first run..."
 
-# Build all services
-docker-compose -f docker-compose.services.yml build --parallel
+# Build all services (need both files for dependency resolution)
+docker-compose -f docker-compose.yml -f docker-compose.services.yml build --parallel
 
 echo -e "${GREEN}✓ All images built successfully${NC}"
 
@@ -53,7 +57,7 @@ echo "Waiting for services to be healthy..."
 echo "======================================"
 
 # Wait for services to be healthy
-services=("user-service:8084" "event-service:8081" "reminder-service:8085" "media-service:8086" "file-service:8087" "query-service:8082" "ai-service:8083" "personalization-service:8088")
+services=("user-service:8081" "event-service:8082" "query-service:8083" "personalization-service:8084" "ai-service:8085" "reminder-service:8086" "media-service:8087" "file-service:8088")
 
 for service in "${services[@]}"; do
     IFS=':' read -r name port <<< "$service"
@@ -83,14 +87,15 @@ echo -e "${GREEN}All Services Started!${NC}"
 echo "======================================"
 echo ""
 echo "Service URLs:"
-echo "  User Service:           http://localhost:8084"
-echo "  Event Service:          http://localhost:8081"
-echo "  Query Service:          http://localhost:8082"
-echo "  AI Service:             http://localhost:8083"
-echo "  Reminder Service:       http://localhost:8085"
-echo "  Media Service:          http://localhost:8086"
-echo "  File Service:           http://localhost:8087"
-echo "  Personalization Service: http://localhost:8088"
+echo "  User Service:            http://localhost:8081"
+echo "  Event Service:           http://localhost:8082"
+echo "  Query Service:           http://localhost:8083"
+echo "  Personalization Service: http://localhost:8084"
+echo "  AI Service:              http://localhost:8085"
+echo "  Reminder Service:        http://localhost:8086"
+echo "  Media Service:           http://localhost:8087"
+echo "  File Service:            http://localhost:8088"
+echo "  Gateway Service:         http://localhost:8080"
 echo ""
 echo "Infrastructure:"
 echo "  PostgreSQL:             localhost:5432"

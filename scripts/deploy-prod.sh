@@ -3,6 +3,10 @@
 
 set -e
 
+# Enable Docker BuildKit for better caching and performance
+export DOCKER_BUILDKIT=1
+export COMPOSE_DOCKER_CLI_BUILD=1
+
 echo "🚀 Deploying Tala Backend to Production..."
 
 # Check environment

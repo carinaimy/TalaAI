@@ -1,5 +1,11 @@
+# syntax=docker/dockerfile:1.4
 # Generic Dockerfile for all TalaAI services
-# Usage: docker build -f Dockerfile.service --build-arg SERVICE_NAME=user-service -t tala-user-service .
+# Usage: DOCKER_BUILDKIT=1 docker build -f Dockerfile.service --build-arg SERVICE_NAME=user-service -t tala-user-service .
+#
+# Optimized for Docker layer caching:
+# 1. Dependencies layer (cached unless pom.xml changes)
+# 2. Source code layer (rebuilt only when code changes)
+# 3. BuildKit cache mounts for Maven repository (persistent across builds)
 
 ARG SERVICE_NAME
 FROM eclipse-temurin:21-jdk-alpine AS builder
@@ -10,17 +16,35 @@ WORKDIR /build
 # Install Maven
 RUN apk add --no-cache maven
 
-# Copy parent pom
+# LAYER 1: Copy only POM files for dependency resolution
 COPY pom.xml ./
+COPY shared/common-core/pom.xml ./shared/common-core/
+# Copy all service POMs (Maven reactor needs to see all modules)
+COPY services/user-service/pom.xml ./services/user-service/
+COPY services/event-service/pom.xml ./services/event-service/
+COPY services/reminder-service/pom.xml ./services/reminder-service/
+COPY services/media-service/pom.xml ./services/media-service/
+COPY services/file-service/pom.xml ./services/file-service/
+COPY services/query-service/pom.xml ./services/query-service/
+COPY services/ai-service/pom.xml ./services/ai-service/
+COPY services/personalization-service/pom.xml ./services/personalization-service/
+COPY services/gateway-service/pom.xml ./services/gateway-service/
 
-# Copy common modules
+# Download dependencies (this layer will be cached unless pom.xml changes)
+# Use BuildKit cache mount for Maven repository for faster rebuilds
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn dependency:go-offline -pl services/${SERVICE_NAME} -am || true
+
+# LAYER 2: Copy shared module source
 COPY shared ./shared
 
-# Copy all service directories (needed for Maven reactor)
-COPY services ./services
+# LAYER 3: Copy service source code (only the specific service we're building)
+COPY services/${SERVICE_NAME}/src ./services/${SERVICE_NAME}/src
 
-# Build the specific service
-RUN mvn clean package -DskipTests -pl services/${SERVICE_NAME} -am
+# Build the specific service (only rebuilds if source or dependencies changed)
+# Use BuildKit cache mount for Maven repository
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn clean package -DskipTests -pl services/${SERVICE_NAME} -am
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine

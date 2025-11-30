@@ -1,21 +1,35 @@
+# syntax=docker/dockerfile:1.4
 # Multi-stage Dockerfile for Event Service
-# Optimized for Apple Silicon (ARM64)
+# Optimized for Docker layer caching with BuildKit cache mounts
+# Build from root: cd ../.. && DOCKER_BUILDKIT=1 docker build -f services/event-service/Dockerfile -t tala/event-service .
 
 # Stage 1: Build
-FROM maven:3.9-eclipse-temurin-21-alpine AS build
+FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 
-# Copy parent POM
-COPY ../../pom.xml ./pom.xml
+# Install Maven
+RUN apk add --no-cache maven
 
-# Copy shared modules
+# LAYER 1: Copy only POM files for dependency resolution
+COPY ../../pom.xml ./pom.xml
+COPY ../../shared/common-core/pom.xml ./shared/common-core/
+COPY pom.xml ./services/event-service/pom.xml
+
+# Download dependencies (cached unless pom.xml changes)
+# Use BuildKit cache mount for Maven repository
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn dependency:go-offline -pl services/event-service -am || true
+
+# LAYER 2: Copy shared module source
 COPY ../../shared ./shared
 
-# Copy event service
-COPY . ./services/event-service
+# LAYER 3: Copy event service source
+COPY src ./services/event-service/src
 
-# Build
-RUN mvn clean package -pl services/event-service -am -DskipTests
+# Build (only rebuilds if source changed)
+# Use BuildKit cache mount for Maven repository
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn clean package -pl services/event-service -am -DskipTests
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine

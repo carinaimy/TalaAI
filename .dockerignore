@@ -1,0 +1,57 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+.DS_Store
+
+# Build outputs (exclude from context, will be built inside container)
+target/
+build/
+out/
+
+# Logs
+*.log
+logs/
+
+# Test outputs
+*.class
+
+# Maven wrapper (keep mvnw for builds)
+# .mvn/wrapper/maven-wrapper.jar
+
+# Docker (keep Dockerfiles, exclude compose files and this file)
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+README.md
+*.md
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+Jenkinsfile
+
+# Infrastructure configs (not needed in build)
+infrastructure/
+nginx/
+
+# Mock data
+mock-data-export/
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*~
+
+# OS files
+Thumbs.db

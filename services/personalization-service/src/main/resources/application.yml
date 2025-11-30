@@ -1,21 +1,27 @@
 server:
   port: ${PERSONALIZATION_SERVICE_PORT:8088}
+  compression:
+    enabled: true
+  error:
+    include-message: always
+    include-binding-errors: always
 
 spring:
   application:
     name: personalization-service
   
-  redis:
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:}
-    timeout: 2000ms
-    lettuce:
-      pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 2
-        max-wait: -1ms
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
+      password: ${SPRING_REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: -1ms
 
   cache:
     type: caffeine
@@ -34,17 +40,17 @@ feign:
   # Service URLs
   services:
     query-service:
-      url: ${QUERY_SERVICE_URL:http://localhost:8082}
+      url: ${FEIGN_SERVICES_QUERY_SERVICE_URL:http://localhost:8082}
     reminder-service:
-      url: ${REMINDER_SERVICE_URL:http://localhost:8085}
+      url: ${FEIGN_SERVICES_REMINDER_SERVICE_URL:http://localhost:8085}
     media-service:
-      url: ${MEDIA_SERVICE_URL:http://localhost:8086}
+      url: ${FEIGN_SERVICES_MEDIA_SERVICE_URL:http://localhost:8086}
     user-service:
-      url: ${USER_SERVICE_URL:http://localhost:8084}
+      url: ${FEIGN_SERVICES_USER_SERVICE_URL:http://localhost:8084}
     ai-service:
-      url: ${AI_SERVICE_URL:http://localhost:8083}
+      url: ${FEIGN_SERVICES_AI_SERVICE_URL:http://localhost:8083}
     event-service:
-      url: ${EVENT_SERVICE_URL:http://localhost:8081}
+      url: ${FEIGN_SERVICES_EVENT_SERVICE_URL:http://localhost:8081}
 
 # Personalization configuration
 personalization:
@@ -88,7 +94,11 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
