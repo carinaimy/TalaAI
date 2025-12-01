@@ -363,28 +363,17 @@ docker-compose up -d
 
 ## 📚 API Documentation
 
-### Event Service
+### Origin Data Service & Timeline
 
 ```bash
-# Create event
-POST /api/v1/events
-Content-Type: application/json
-{
-  "profileId": 123,
-  "userId": 456,
-  "eventType": "FEEDING",
-  "eventTime": "2024-01-01T10:30:00Z",
-  "eventData": {
-    "amount": 120,
-    "unit": "ml"
-  }
-}
+# Get timeline entries for a profile (paginated)
+GET /api/v1/timeline/profile/{profileId}?page=0&size=20
 
-# Get event
-GET /api/v1/events/{id}
+# Get timeline entries for a profile in a time range
+GET /api/v1/timeline/profile/{profileId}/range?startTime=...&endTime=...
 
-# Query events
-GET /api/v1/events?profileId=123&startTime=...&endTime=...
+# Get a single timeline entry
+GET /api/v1/timeline/{id}
 ```
 
 Full API documentation: [API_SPEC.md](./docs/API_SPEC.md)
@@ -400,7 +389,7 @@ Full API documentation: [API_SPEC.md](./docs/API_SPEC.md)
 ### Commit Convention
 
 ```
-feat(event-service): add event validation
+feat(origin-data-service): add timeline range API
 fix(query-service): resolve timeout issue
 docs: update API documentation
 test(ai-service): add pattern detection tests

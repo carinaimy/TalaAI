@@ -210,20 +210,20 @@ public class ContextBuilder {
     
     private List<PersonalizationContext.RecentEventData> fetchRecentEvents(Long profileId, LocalDate date) {
         try {
-            Instant endTime = date.atStartOfDay(ZoneId.systemDefault()).toInstant();
+            Instant endTime = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
             Instant startTime = date.minusDays(7).atStartOfDay(ZoneId.systemDefault()).toInstant();
             
-            List<EventServiceClient.EventResponse> events = 
-                eventServiceClient.getTimeline(profileId, startTime, endTime);
+            List<EventServiceClient.TimelineEntryResponse> entries = 
+                eventServiceClient.getTimelineRange(profileId, startTime, endTime);
             
-            return events.stream()
+            return entries.stream()
                 .map(e -> PersonalizationContext.RecentEventData.builder()
                     .id(e.id)
-                    .eventType(e.eventType)
-                    .priority(e.priority)
-                    .urgencyHours(e.urgencyHours)
-                    .riskLevel(e.riskLevel)
-                    .occurredAt(e.occurredAt.atZone(ZoneId.systemDefault()).toLocalDate())
+                    .eventType(e.timelineType)
+                    .priority(null)
+                    .urgencyHours(null)
+                    .riskLevel(null)
+                    .occurredAt(e.recordTime.atZone(ZoneId.systemDefault()).toLocalDate())
                     .build())
                 .collect(Collectors.toList());
         } catch (Exception e) {

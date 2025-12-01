@@ -23,7 +23,7 @@
     <modules>
         <module>shared/common-core</module>
         <module>services/user-service</module>
-        <module>services/event-service</module>
+        <module>services/origin-data-service</module>
         <module>services/reminder-service</module>
         <module>services/media-service</module>
         <module>services/file-service</module>

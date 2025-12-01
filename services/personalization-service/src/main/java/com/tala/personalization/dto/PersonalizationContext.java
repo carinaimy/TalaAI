@@ -147,7 +147,7 @@ public class PersonalizationContext {
     }
     
     /**
-     * Recent event data from event-service
+     * Recent event data from origin-data-service timeline
      */
     @Data
     @Builder

@@ -57,7 +57,7 @@ echo "Waiting for services to be healthy..."
 echo "======================================"
 
 # Wait for services to be healthy
-services=("user-service:8081" "event-service:8082" "query-service:8083" "personalization-service:8084" "ai-service:8085" "reminder-service:8086" "media-service:8087" "file-service:8088")
+services=("user-service:8081" "query-service:8083" "personalization-service:8084" "ai-service:8085" "reminder-service:8086" "media-service:8087" "file-service:8088")
 
 for service in "${services[@]}"; do
     IFS=':' read -r name port <<< "$service"
@@ -88,7 +88,6 @@ echo "======================================"
 echo ""
 echo "Service URLs:"
 echo "  User Service:            http://localhost:8081"
-echo "  Event Service:           http://localhost:8082"
 echo "  Query Service:           http://localhost:8083"
 echo "  Personalization Service: http://localhost:8084"
 echo "  AI Service:              http://localhost:8085"

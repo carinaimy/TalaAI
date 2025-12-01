@@ -73,7 +73,7 @@ jobs:
     strategy:
       matrix:
         service:
-          - event-service
+          - origin-data-service
           - query-service
           - ai-service
           - user-service

@@ -49,53 +49,6 @@ services:
     networks:
       - tala-network
 
-  # Event Service - Universal Event Storage
-  event-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.service
-      args:
-        SERVICE_NAME: event-service
-    image: tala/event-service:latest
-    container_name: tala-event-service
-    platform: linux/arm64
-    ports:
-      - "8082:8082"
-    environment:
-      SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tala_db
-      SPRING_DATASOURCE_USERNAME: tala
-      SPRING_DATASOURCE_PASSWORD: tala_dev_2025
-      EVENT_SERVICE_PORT: 8082
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      JWT_SECRET: dev-secret-key-change-in-production-minimum-64-characters-long-for-security
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-    networks:
-      - tala-network
-
   # Reminder Service - Reminders and Notifications
   reminder-service:
     build:
@@ -327,6 +280,48 @@ services:
     networks:
       - tala-network
 
+  # Origin Data Service - Event Sourcing for Baby Care Data
+  origin-data-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: origin-data-service
+    image: tala/origin-data-service:latest
+    container_name: tala-origin-data-service
+    platform: linux/arm64
+    ports:
+      - "8089:8089"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tala_db
+      SPRING_DATASOURCE_USERNAME: tala
+      SPRING_DATASOURCE_PASSWORD: tala_dev_2025
+      ORIGIN_DATA_SERVICE_PORT: 8089
+      JWT_SECRET: dev-secret-key-change-in-production-minimum-64-characters-long-for-security
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8089/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    networks:
+      - tala-network
+
   # Personalization Service - Today/Insights/Tala Pages
   personalization-service:
     build:
@@ -341,12 +336,15 @@ services:
       - "8084:8084"
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tala_db
+      SPRING_DATASOURCE_USERNAME: tala
+      SPRING_DATASOURCE_PASSWORD: tala_dev_2025
       PERSONALIZATION_SERVICE_PORT: 8084
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
       # Service URLs
       FEIGN_SERVICES_USER_SERVICE_URL: http://user-service:8081
-      FEIGN_SERVICES_EVENT_SERVICE_URL: http://event-service:8082
+      FEIGN_SERVICES_ORIGIN_DATA_SERVICE_URL: http://origin-data-service:8089
       FEIGN_SERVICES_QUERY_SERVICE_URL: http://query-service:8083
       FEIGN_SERVICES_REMINDER_SERVICE_URL: http://reminder-service:8086
       FEIGN_SERVICES_MEDIA_SERVICE_URL: http://media-service:8087
@@ -354,7 +352,7 @@ services:
     depends_on:
       user-service:
         condition: service_healthy
-      event-service:
+      origin-data-service:
         condition: service_healthy
       query-service:
         condition: service_healthy

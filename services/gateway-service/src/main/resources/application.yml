@@ -13,10 +13,10 @@ spring:
           filters:
             - StripPrefix=0
         
-        - id: event-service
-          uri: ${EVENT_SERVICE_URL:http://event-service:8082}
+        - id: origin-data-service
+          uri: ${ORIGIN_DATA_SERVICE_URL:http://origin-data-service:8089}
           predicates:
-            - Path=/api/v1/events/**
+            - Path=/api/v1/timeline/**,/api/v1/origin/**
           filters:
             - StripPrefix=0
         

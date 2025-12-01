@@ -192,30 +192,26 @@ services:
     networks:
       - tala-network
 
-  # Event Service
-  event-service:
+  # Origin Data Service
+  origin-data-service:
     build:
       context: .
       dockerfile: Dockerfile.service
       args:
-        SERVICE_NAME: event-service
-    image: tala/event-service:latest
-    container_name: tala-event-service
+        SERVICE_NAME: origin-data-service
+    image: tala/origin-data-service:latest
+    container_name: tala-origin-data-service
     platform: linux/arm64
     ports:
-      - "8081:8081"
+      - "8089:8089"
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-tala_prod}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-tala_prod}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      ORIGIN_DATA_SERVICE_PORT: 8089
     depends_on:
       - postgres
-      - kafka
-      - redis
     deploy:
       resources:
         limits:
@@ -242,12 +238,12 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      EVENT_SERVICE_URL: http://event-service:8081
+      ORIGIN_DATA_SERVICE_URL: http://origin-data-service:8089
       QUERY_SERVICE_URL: http://query-service:8082
       AI_SERVICE_URL: http://ai-service:8083
       USER_SERVICE_URL: http://user-service:8084
     depends_on:
-      - event-service
+      - origin-data-service
     deploy:
       resources:
         limits:

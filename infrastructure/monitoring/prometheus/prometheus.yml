@@ -7,13 +7,13 @@ global:
 
 # Scrape configurations
 scrape_configs:
-  # Event Service
-  - job_name: 'event-service'
+  # Origin Data Service
+  - job_name: 'origin-data-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['event-service:8081']
+      - targets: ['origin-data-service:8089']
         labels:
-          service: 'event-service'
+          service: 'origin-data-service'
   
   # Query Service
   - job_name: 'query-service'

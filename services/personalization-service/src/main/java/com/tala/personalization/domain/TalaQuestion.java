@@ -1,12 +1,13 @@
 package com.tala.personalization.domain;
 
 import com.tala.core.domain.BaseEntity;
-import io.hypersistence.utils.hibernate.type.array.StringArrayType;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.Type;
+import org.hibernate.type.SqlTypes;
 
 import java.util.Map;
 
@@ -77,8 +78,8 @@ public class TalaQuestion extends BaseEntity {
     @Builder.Default
     private Integer maxFrequencyDays = 7;
     
-    @Type(StringArrayType.class)
-    @Column(name = "tags", columnDefinition = "text[]")
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "tags")
     private String[] tags;
     
     @Column(name = "is_active")

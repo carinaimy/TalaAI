@@ -1,12 +1,13 @@
 package com.tala.personalization.domain;
 
 import com.tala.core.domain.BaseEntity;
-import io.hypersistence.utils.hibernate.type.array.StringArrayType;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.Type;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.Map;
@@ -46,12 +47,12 @@ public class UserInterestProfile extends BaseEntity {
     @Builder.Default
     private Map<String, Double> interestVector = Map.of();
     
-    @Type(StringArrayType.class)
-    @Column(name = "explicit_topics", columnDefinition = "text[]")
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "explicit_topics")
     private String[] explicitTopics;
     
-    @Type(StringArrayType.class)
-    @Column(name = "recent_topics", columnDefinition = "text[]")
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "recent_topics")
     private String[] recentTopics;
     
     @Column(name = "daily_interaction_score")

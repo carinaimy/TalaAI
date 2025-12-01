@@ -100,8 +100,8 @@ public class DailyAggregationService {
             .hasSickness(false)
             .build();
         
-        // TODO: Fetch and aggregate events from event-service
-        // This would typically call event-service API or read from shared database
+        // TODO: Fetch and aggregate events from origin-data-service timeline
+        // This should call origin-data-service APIs or read from shared database views
         
         return repository.save(summary);
     }

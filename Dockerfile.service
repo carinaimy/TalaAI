@@ -21,7 +21,7 @@ COPY pom.xml ./
 COPY shared/common-core/pom.xml ./shared/common-core/
 # Copy all service POMs (Maven reactor needs to see all modules)
 COPY services/user-service/pom.xml ./services/user-service/
-COPY services/event-service/pom.xml ./services/event-service/
+COPY services/origin-data-service/pom.xml ./services/origin-data-service/
 COPY services/reminder-service/pom.xml ./services/reminder-service/
 COPY services/media-service/pom.xml ./services/media-service/
 COPY services/file-service/pom.xml ./services/file-service/

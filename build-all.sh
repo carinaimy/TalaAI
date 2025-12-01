@@ -8,7 +8,6 @@ cd "$(dirname "$0")/services"
 
 SERVICES=(
     "gateway-service"
-    "event-service"
     "query-service"
     "ai-service"
     "user-service"

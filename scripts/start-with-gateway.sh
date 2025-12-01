@@ -54,7 +54,6 @@ check_service() {
 
 check_service "API Gateway      " "http://localhost:8080/health"
 check_service "User Service     " "http://localhost:8081/actuator/health"
-check_service "Event Service    " "http://localhost:8082/actuator/health"
 check_service "Query Service    " "http://localhost:8083/actuator/health"
 check_service "Personalization  " "http://localhost:8084/actuator/health"
 check_service "AI Service       " "http://localhost:8085/actuator/health"
@@ -81,7 +80,6 @@ test_route() {
 }
 
 test_route "User Service     " "/api/v1/auth/health"
-test_route "Event Service    " "/api/v1/events/health"
 test_route "Query Service    " "/api/v1/analytics/health"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
