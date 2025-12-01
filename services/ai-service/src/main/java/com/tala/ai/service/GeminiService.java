@@ -12,6 +12,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -131,6 +132,59 @@ public class GeminiService {
             systemInstruction, context, userPrompt
         );
         return generateContent(combinedPrompt);
+    }
+    
+    /**
+     * Generate content with attachments (images, PDFs)
+     * Note: For Gemini 2.5 Flash, we'll use inline data for images
+     */
+    public String generateContentWithAttachments(String prompt, List<String> attachmentUrls) throws IOException {
+        String url = String.format(GEMINI_API_URL, model, apiKey);
+        
+        String requestBody = buildRequestBodyWithAttachments(prompt, attachmentUrls);
+        
+        Request request = new Request.Builder()
+            .url(url)
+            .post(RequestBody.create(requestBody, MediaType.parse("application/json")))
+            .build();
+        
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Gemini API error: " + response.code());
+            }
+            
+            String responseBody = response.body().string();
+            return extractTextFromResponse(responseBody);
+        }
+    }
+    
+    private String buildRequestBodyWithAttachments(String prompt, List<String> attachmentUrls) {
+        StringBuilder partsJson = new StringBuilder();
+        partsJson.append("[{\"text\": \"").append(escapeJson(prompt)).append("\"}");
+        
+        // For now, we'll add attachment URLs as text references
+        // In production, you'd fetch and encode images as base64
+        if (attachmentUrls != null && !attachmentUrls.isEmpty()) {
+            partsJson.append(",{\"text\": \"Attachment URLs: ");
+            partsJson.append(String.join(", ", attachmentUrls));
+            partsJson.append("\"}");
+        }
+        
+        partsJson.append("]");
+        
+        return String.format("""
+            {
+              "contents": [{
+                "parts": %s
+              }],
+              "generationConfig": {
+                "temperature": 0.7,
+                "topK": 40,
+                "topP": 0.95,
+                "maxOutputTokens": 4096
+              }
+            }
+            """, partsJson.toString());
     }
     
     private String buildRequestBody(String prompt) {

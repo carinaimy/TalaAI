@@ -1,0 +1,94 @@
+package com.tala.origindata.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tala.origindata.constant.DataSourceType;
+import com.tala.origindata.domain.OriginalEvent;
+import com.tala.origindata.dto.ChatEventRequest;
+import com.tala.origindata.service.OriginalEventService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Controller for receiving AI-processed chat events
+ */
+@RestController
+@RequestMapping("/api/v1/chat-events")
+@RequiredArgsConstructor
+@Slf4j
+public class ChatEventController {
+    
+    private final OriginalEventService originalEventService;
+    private final ObjectMapper objectMapper;
+    
+    /**
+     * Create original event from AI-processed chat
+     * 
+     * POST /api/v1/chat-events
+     */
+    @PostMapping
+    public ResponseEntity<Map<String, Object>> createChatEvent(@RequestBody ChatEventRequest request) {
+        log.info("POST /api/v1/chat-events - profileId: {}, events count: {}", 
+                request.getProfileId(), 
+                request.getEvents() != null ? request.getEvents().size() : 0);
+        
+        try {
+            // Convert request to JSON payload
+            String rawPayload = objectMapper.writeValueAsString(request);
+            
+            // Determine event time from first extracted event or use current time
+            Instant eventTime = Instant.now();
+            if (request.getEvents() != null && !request.getEvents().isEmpty()) {
+                ChatEventRequest.ExtractedEvent firstEvent = request.getEvents().get(0);
+                if (firstEvent.getTimestamp() != null) {
+                    eventTime = firstEvent.getTimestamp()
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .toInstant();
+                }
+            }
+            
+            // Create original event (event sourcing)
+            OriginalEvent originalEvent = originalEventService.createEvent(
+                    request.getProfileId(),
+                    DataSourceType.AI_CHAT,
+                    null,  // No external source ID for chat
+                    eventTime,
+                    rawPayload
+            );
+            
+            // Build response
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("originalEventId", originalEvent.getId());
+            response.put("message", "Chat event stored successfully");
+            response.put("eventsCount", request.getEvents() != null ? request.getEvents().size() : 0);
+            
+            log.info("Chat event stored: originalEventId={}, profileId={}", 
+                    originalEvent.getId(), request.getProfileId());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Failed to store chat event", e);
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", "Failed to store chat event: " + e.getMessage());
+            
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
+    
+    /**
+     * Health check
+     */
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("Chat Event Controller is running");
+    }
+}

@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  ai-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tala-ai-service-test
+    ports:
+      - "8085:8085"
+    environment:
+      # Spring profiles
+      SPRING_PROFILES_ACTIVE: test
+      
+      # Server config
+      AI_SERVICE_PORT: 8085
+      
+      # PostgreSQL (for ai schema - ai_today_overviews)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tala_db
+      SPRING_DATASOURCE_USERNAME: tala
+      SPRING_DATASOURCE_PASSWORD: tala_dev_2025
+      
+      # Redis
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_PASSWORD: ""
+      
+      # Kafka
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      
+      # ClickHouse (for analytics queries)
+      CLICKHOUSE_URL: jdbc:clickhouse://clickhouse:8123/tala_analytics
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+      
+      # Gemini AI API
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: gemini-2.0-flash-exp
+      
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+      - clickhouse
+    networks:
+      - tala-network
+    restart: unless-stopped
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:16-alpine
+    container_name: tala-postgres-test
+    environment:
+      POSTGRES_DB: tala_db
+      POSTGRES_USER: tala
+      POSTGRES_PASSWORD: tala_dev_2025
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - tala-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tala"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    container_name: tala-redis-test
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - tala-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Kafka message broker
+  kafka:
+    image: bitnami/kafka:3.6
+    container_name: tala-kafka-test
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_CFG_NODE_ID: 0
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      ALLOW_PLAINTEXT_LISTENER: yes
+    volumes:
+      - kafka-data:/bitnami/kafka
+    networks:
+      - tala-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ClickHouse analytics database
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8-alpine
+    container_name: tala-clickhouse-test
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      CLICKHOUSE_DB: tala_analytics
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    networks:
+      - tala-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  tala-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  kafka-data:
+  clickhouse-data:
