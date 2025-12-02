@@ -7,6 +7,7 @@ import com.tala.core.exception.TalaException;
 import com.tala.ai.dto.EventExtractionResult;
 import com.tala.ai.service.AIProcessingOrchestrator;
 import com.tala.ai.service.ChatMessageService;
+import com.tala.ai.service.ContextEnrichmentService;
 import com.tala.ai.service.Mem0Service;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,7 @@ public class ChatController {
     private final OriginDataServiceClient originDataServiceClient;
     private final Mem0Service mem0Service;
     private final ChatMessageService chatMessageService;
+    private final ContextEnrichmentService contextEnrichmentService;
     
     /**
      * Chat with AI (streaming via SSE)
@@ -101,24 +103,26 @@ public class ChatController {
                     "message", "Processing your message..."
             ));
             
-            // Step 2: Retrieve chat history from mem0 (if enabled)
-            String chatHistory = null;
-            String memoryContext = null;
+            // Step 2: Enrich user message with chat history and memory context
+            String enrichedMessage = request.message;
             if (request.userId != null && request.profileId != null) {
                 try {
                     sendEvent(emitter, "thinking", Map.of(
-                            "stage", "memory_retrieval",
-                            "message", "Retrieving conversation context..."
+                            "stage", "context_enrichment",
+                            "message", "Loading conversation history..."
                     ));
                     
-                    chatHistory = mem0Service.getChatHistory(request.userId, request.profileId);
-                    memoryContext = mem0Service.getRelevantMemories(request.message, request.userId, request.profileId);
+                    // Use ContextEnrichmentService to properly format chat history
+                    enrichedMessage = contextEnrichmentService.enrichUserMessage(
+                            request.profileId, 
+                            request.userId, 
+                            request.message, 
+                            10); // Last 10 messages
                     
-                    log.info("Retrieved chat history length: {}, memory context length: {}", 
-                            chatHistory != null ? chatHistory.length() : 0,
-                            memoryContext != null ? memoryContext.length() : 0);
+                    log.info("Enriched user message with chat history and memory context");
                 } catch (Exception e) {
-                    log.warn("Failed to retrieve mem0 data, continuing without it", e);
+                    log.warn("Failed to enrich message with context, using original message: {}", e.getMessage());
+                    enrichedMessage = request.message;
                 }
             }
             
@@ -132,10 +136,10 @@ public class ChatController {
             ));
             
             AIProcessingOrchestrator.ProcessingRequest orchRequest = new AIProcessingOrchestrator.ProcessingRequest();
-            orchRequest.userMessage = request.message;
+            orchRequest.userMessage = enrichedMessage; // Use enriched message with history
             orchRequest.attachmentUrls = request.attachmentUrls;
             orchRequest.babyProfileContext = babyProfileContext;
-            orchRequest.chatHistory = combineHistoryAndMemory(chatHistory, memoryContext);
+            orchRequest.chatHistory = null; // History already included in enrichedMessage
             orchRequest.userLocalTime = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
             orchRequest.profileId = request.profileId;
             orchRequest.userId = request.userId;
@@ -329,25 +333,6 @@ public class ChatController {
     }
     
     /**
-     * Combine chat history and memory context
-     */
-    private String combineHistoryAndMemory(String chatHistory, String memoryContext) {
-        StringBuilder combined = new StringBuilder();
-        
-        if (memoryContext != null && !memoryContext.isBlank()) {
-            combined.append("=== RELEVANT MEMORIES ===\n");
-            combined.append(memoryContext).append("\n\n");
-        }
-        
-        if (chatHistory != null && !chatHistory.isBlank()) {
-            combined.append("=== RECENT CHAT HISTORY ===\n");
-            combined.append(chatHistory).append("\n");
-        }
-        
-        return combined.length() > 0 ? combined.toString() : null;
-    }
-    
-    /**
      * Build thinking process JSON for storage
      */
     private String buildThinkingProcess(AIProcessingOrchestrator.ProcessingResult result) {
@@ -475,6 +460,59 @@ public class ChatController {
     }
     
     /**
+     * Get chat history for a profile
+     * 
+     * GET /api/v1/chat/history?profileId={profileId}
+     */
+    @GetMapping("/history")
+    public ResponseEntity<ChatHistoryResponse> getChatHistory(
+            @RequestParam Long profileId,
+            @RequestParam(required = false, defaultValue = "50") Integer limit) {
+        log.info("GET /api/v1/chat/history - profileId: {}, limit: {}", profileId, limit);
+        
+        try {
+            List<com.tala.ai.domain.ChatMessage> messages = chatMessageService.getAllMessages(profileId);
+            
+            // Convert to response DTOs
+            List<ChatHistoryMessage> historyMessages = messages.stream()
+                    .map(msg -> {
+                        ChatHistoryMessage dto = new ChatHistoryMessage();
+                        dto.id = msg.getId();
+                        dto.profileId = msg.getProfileId();
+                        dto.userId = msg.getUserId();
+                        dto.role = msg.getRole().toString().toLowerCase();
+                        dto.content = msg.getContent();
+                        dto.messageType = msg.getMessageType().toString().toLowerCase();
+                        dto.attachmentIds = msg.getAttachmentIds();
+                        dto.attachmentCount = msg.getAttachmentCount();
+                        dto.interactionType = msg.getInteractionType();
+                        dto.confidence = msg.getConfidence();
+                        dto.createdAt = msg.getCreatedAt();
+                        dto.updatedAt = msg.getUpdatedAt();
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+            
+            ChatHistoryResponse response = new ChatHistoryResponse();
+            response.success = true;
+            response.messages = historyMessages;
+            response.totalCount = historyMessages.size();
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Failed to get chat history", e);
+            
+            ChatHistoryResponse errorResponse = new ChatHistoryResponse();
+            errorResponse.success = false;
+            errorResponse.messages = List.of();
+            errorResponse.totalCount = 0;
+            
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
+    
+    /**
      * Health check
      */
     @GetMapping("/health")
@@ -503,5 +541,43 @@ public class ChatController {
         private String interactionType;
         private Integer eventsCount;
         private List<EventExtractionResult.ExtractedEvent> events;
+    }
+    
+    /**
+     * Chat History Response DTO
+     */
+    @Data
+    public static class ChatHistoryResponse {
+        private Boolean success;
+        private List<ChatHistoryMessage> messages;
+        private Integer totalCount;
+    }
+    
+    /**
+     * Chat History Message DTO
+     */
+    @Data
+    public static class ChatHistoryMessage {
+        @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING)
+        private Long id;
+        
+        @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING)
+        private Long profileId;
+        
+        @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING)
+        private Long userId;
+        
+        private String role;
+        private String content;
+        private String messageType;
+        
+        @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING)
+        private List<Long> attachmentIds;
+        
+        private Integer attachmentCount;
+        private String interactionType;
+        private Double confidence;
+        private java.time.Instant createdAt;
+        private java.time.Instant updatedAt;
     }
 }

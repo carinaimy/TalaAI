@@ -1,5 +1,6 @@
 package com.tala.user.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,6 +18,7 @@ public class AuthResponse {
     private String refreshToken;
     private String tokenType;
     private Long expiresIn;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long userId;
     private String email;
     private String fullName;

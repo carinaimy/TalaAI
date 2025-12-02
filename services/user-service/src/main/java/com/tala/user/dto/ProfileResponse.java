@@ -1,21 +1,29 @@
 package com.tala.user.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.tala.core.dto.BaseResponse;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
-import java.time.Instant;
 import java.time.LocalDate;
 
+/**
+ * Profile Response DTO
+ * Extends BaseResponse for proper Long ID serialization
+ */
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProfileResponse {
+@EqualsAndHashCode(callSuper = true)
+public class ProfileResponse extends BaseResponse {
     
-    private Long id;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long userId;
+    
     private String babyName;
     private LocalDate birthDate;
     private String timezone;
@@ -30,6 +38,4 @@ public class ProfileResponse {
     private String updateMethod;
     private Integer ageInDays;
     private Boolean isDefault;
-    private Instant createdAt;
-    private Instant updatedAt;
 }

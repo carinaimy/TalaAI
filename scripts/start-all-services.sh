@@ -23,7 +23,28 @@ NC='\033[0m' # No Color
 cd "$(dirname "$0")/.."
 
 echo -e "${YELLOW}Step 1: Stopping existing business services...${NC}"
-docker-compose -f docker-compose.services.yml down
+docker-compose -f docker-compose.yml -f docker-compose.services.yml stop \
+  user-service \
+  reminder-service \
+  media-service \
+  file-service \
+  query-service \
+  ai-service \
+  origin-data-service \
+  personalization-service \
+  gateway-service || true
+
+echo -e "${YELLOW}Step 1b: Removing stopped business service containers...${NC}"
+docker-compose -f docker-compose.yml -f docker-compose.services.yml rm -f \
+  user-service \
+  reminder-service \
+  media-service \
+  file-service \
+  query-service \
+  ai-service \
+  origin-data-service \
+  personalization-service \
+  gateway-service || true
 
 echo -e "${YELLOW}Step 2: Building all service images...${NC}"
 echo "This may take 5-10 minutes on first run..."
@@ -47,7 +68,7 @@ done
 echo -e "${GREEN}✓ PostgreSQL is ready${NC}"
 
 echo -e "${YELLOW}Step 4: Starting all microservices...${NC}"
-docker-compose -f docker-compose.services.yml up -d
+docker-compose -f docker-compose.yml -f docker-compose.services.yml up -d
 
 echo ""
 echo "======================================"

@@ -1,5 +1,6 @@
 package com.tala.origindata.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.tala.core.dto.AttachmentRef;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,8 +21,13 @@ import java.util.List;
 @AllArgsConstructor
 public class TimelineEntryResponse {
     
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long id;
+    
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long originalEventId;
+    
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long profileId;
     private String timelineType;
     private String dataSource;
